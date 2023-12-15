@@ -51,11 +51,11 @@ function love.update(dt)
 	update_start = love.timer.getTime()
 	for _, entity in ipairs(entities) do
 		entity:update(dt)
-		if not entity.cell then
-			entity.pos = vec(love.math.random(50, 200), love.math.random(50, 200))
-			entity.velocity = vec(100, 100)
-			grid:add(entity)
-		end
+		-- if not entity.cell then
+		-- 	entity.pos = vec(love.math.random(50, 200), love.math.random(50, 200))
+		-- 	entity.velocity = vec(100, 100)
+		-- 	grid:add(entity)
+		-- end
 	end
 
 	grid:update(dt)
@@ -157,7 +157,7 @@ function love.draw()
 		10,
 		20
 	)
-	lg.print("grid entities: " .. grid:countEntities(), 10, 30)
+	lg.print("grid entities: " .. grid.count, 10, 30)
 	lg.print("entities: " .. #entities, 10, 40)
 	lg.print("orphans: " .. countOrphans(), 10, 50)
 	lg.print("SPACE to add boids", 10, 70)

@@ -6,16 +6,31 @@ function Entity:new()
 	self.height = 8
 	self.speed = 175
 	self.cell = nil
-	self.no_collide = false
 end
 
 function Entity:move(dt)
-	self.pos = vec(self.pos.x + self.velocity.x * dt, self.pos.y + self.velocity.y * dt)
+	local new_pos = vec(self.pos.x + self.velocity.x * dt, self.pos.y + self.velocity.y * dt)
+	new_pos.x = math.max((self.width * 2), math.min(new_pos.x, map_width - (self.width * 2)))
+	new_pos.y = math.max((self.height * 2), math.min(new_pos.y, map_height - (self.height * 2)))
+	self.pos = new_pos
 end
 
-local margin = 50
-local turnfactor = 20
+local margin = 32
+local turnfactor = 50
 
+function Entity:stayInMap()
+	if self.pos.x < self.width then
+		self.velocity.x = self.velocity.x + 200
+	elseif self.pos.x > map_width - self.width then
+		self.velocity.x = self.velocity.x - 200
+	end
+
+	if self.pos.y < self.height then
+		self.velocity.y = self.velocity.y + 200
+	elseif self.pos.y > map_height - self.height then
+		self.velocity.y = self.velocity.y - 200
+	end
+end
 function Entity:steerMargins()
 	if self.pos.x < margin then
 		self.velocity.x = self.velocity.x + turnfactor
@@ -30,17 +45,31 @@ function Entity:steerMargins()
 	end
 end
 
-function Entity:wrapAroundMap()
-	if self.pos.x < 0 then
-		self.pos.x = map_width
-	elseif self.pos.x > map_width then
-		self.pos.x = 0
+function Entity:collideEdges()
+	if self.pos.x < margin then
+		self.velocity.x = -self.velocity.x
+	elseif self.pos.x > map_width - self.width then
+		self.velocity.x = -self.velocity.x
 	end
 
-	if self.pos.y < 0 then
-		self.pos.y = map_height
+	if self.pos.y < margin then
+		self.velocity.y = -self.velocity.y
+	elseif self.pos.y > map_height - self.height then
+		self.velocity.y = -self.velocity.y
+	end
+end
+
+function Entity:wrapAroundMap()
+	if self.pos.x < self.width then
+		self.pos.x = map_width - self.width
+	elseif self.pos.x > map_width then
+		self.pos.x = self.width
+	end
+
+	if self.pos.y < self.height then
+		self.pos.y = map_height - self.height
 	elseif self.pos.y > map_height then
-		self.pos.y = 0
+		self.pos.y = self.height
 	end
 end
 function Entity:update(dt)
@@ -56,9 +85,9 @@ function Entity:update(dt)
 		self.velocity.y = self.velocity.y * factor
 	end
 
-	self:wrapAroundMap()
 	self:steerMargins()
-
+	-- self:stayInMap()
+	--
 	self:move(dt)
 end
 
@@ -68,7 +97,7 @@ function Entity:calculateRules(boids)
 	local separation = { x = 0, y = 0 }
 	local alignment_distance = 16
 	local cohesion_distance = 16
-	local separation_distance = 64
+	local separation_distance = 16
 
 	local count_alignment = 0
 	local count_cohesion = 0
@@ -120,7 +149,7 @@ function Entity:calculateRules(boids)
 		separation.y = separation.y / count_separation * separation_factor
 	end
 
-	return alignment, cohesion, separation
+	return vec(alignment.x, alignment.y), vec(cohesion.x, cohesion.y), vec(separation.x, separation.y)
 end
 
 function Entity:draw()

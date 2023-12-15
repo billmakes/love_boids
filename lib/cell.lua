@@ -25,29 +25,37 @@ end
 function Cell:remove(entity)
 	for i, e in ipairs(self.entities) do
 		if e == entity then
-			entity.cell = nil
 			table.remove(self.entities, i)
+			break
+		end
+	end
+	for _, cell in ipairs(self.grid.cells) do
+		if cell:inRect(entity) then
+			entity.cell = cell
+			cell:insert(entity)
+			break
 		end
 	end
 end
 
 function Cell:update(dt)
+	local to_remove = {}
 	for _, entity in ipairs(self.entities) do
 		entity.cell = self
 
 		local eRect = { x = entity.pos.x, y = entity.pos.y, w = entity.width, h = entity.height }
 
 		if not self:inRect(entity) then
-			self:remove(entity)
-			self.grid:add(entity)
+			table.insert(to_remove, entity)
 		else
-			if entity.no_collide then
-				return
-			end
-			for j, otherEntity in ipairs(self.entities) do
-				if entity ~= otherEntity then
-					local oRect =
-						{ x = otherEntity.pos.x, y = otherEntity.pos.y, w = otherEntity.width, h = otherEntity.height }
+			for _, other_entity in ipairs(self.entities) do
+				if entity ~= other_entity then
+					local oRect = {
+						x = other_entity.pos.x,
+						y = other_entity.pos.y,
+						w = other_entity.width,
+						h = other_entity.height,
+					}
 					if collision.checkRectangles(eRect, oRect) then
 						local result = collision.resolveCollision(eRect, oRect)
 						entity.pos.x = result.x
@@ -56,6 +64,9 @@ function Cell:update(dt)
 				end
 			end
 		end
+	end
+	for _, entity in ipairs(to_remove) do
+		self:remove(entity)
 	end
 end
 
@@ -72,7 +83,7 @@ function Cell:draw()
 			lg.setColor(0, 0, 1, 1)
 		end
 		lg.rectangle("line", self.coords.x, self.coords.y, self.size, self.size)
-		lg.print(self.index, self.coords.x, self.coords.y)
+		lg.print(tostring(#self.entities), self.coords.x, self.coords.y)
 		lg.setColor(1, 1, 1, 1)
 	end
 	lg.pop()

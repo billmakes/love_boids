@@ -3,6 +3,7 @@ local Grid = class:extend()
 function Grid:new(cell_size)
 	self.cells = {}
 	self.cell_size = cell_size
+	self.count = 0
 
 	for y = 1, map_height / cell_size do
 		for x = 1, map_width / cell_size do
@@ -16,26 +17,25 @@ function Grid:new(cell_size)
 end
 
 function Grid:add(entity)
+	if entity.cell then
+		entity.cell:remove(entity)
+	end
 	for _, cell in ipairs(self.cells) do
 		if cell:inRect(entity) then
 			entity.cell = cell
 			cell:insert(entity)
+			break
 		end
 	end
 end
 
 function Grid:update(dt)
-	for _, cell in ipairs(self.cells) do
-		cell:update(dt)
-	end
-end
-
-function Grid:countEntities()
 	local count = 0
 	for _, cell in ipairs(self.cells) do
+		cell:update(dt)
 		count = count + #cell.entities
 	end
-	return count
+	self.count = count
 end
 
 function Grid:draw()
