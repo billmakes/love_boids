@@ -41,6 +41,7 @@ end
 function Cell:update(dt)
 	local to_remove = {}
 	for _, entity in ipairs(self.entities) do
+		entity:update(dt)
 		entity.cell = self
 
 		local eRect = { x = entity.pos.x, y = entity.pos.y, w = entity.width, h = entity.height }
@@ -58,8 +59,16 @@ function Cell:update(dt)
 					}
 					if collision.checkRectangles(eRect, oRect) then
 						local result = collision.resolveCollision(eRect, oRect)
-						entity.pos.x = result.x
-						entity.pos.y = result.y
+						local dir = vec(result.x - entity.pos.x, result.y - entity.pos.y)
+						local dir_length = dir:length()
+						if dir_length > 0 then
+							dir.x = dir.x / dir_length
+							dir.y = dir.y / dir_length
+						else
+							dir.x = 0
+							dir.y = 0
+						end
+						entity.velocity = entity.velocity + (dir * 2)
 					end
 				end
 			end

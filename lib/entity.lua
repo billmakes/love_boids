@@ -1,6 +1,8 @@
 local Entity = class:extend()
 function Entity:new()
 	self.pos = vec(love.math.random(50, 200), love.math.random(50, 200))
+	self.prev_pos = vec(self.pos.x, self.pos.y)
+	self.stuck_timer = 0
 	self.velocity = vec(love.math.random(-100, 100), love.math.random(-100, 100))
 	self.width = 8
 	self.height = 8
@@ -10,27 +12,15 @@ end
 
 function Entity:move(dt)
 	local new_pos = vec(self.pos.x + self.velocity.x * dt, self.pos.y + self.velocity.y * dt)
-	new_pos.x = math.max((self.width * 2), math.min(new_pos.x, map_width - (self.width * 2)))
-	new_pos.y = math.max((self.height * 2), math.min(new_pos.y, map_height - (self.height * 2)))
+	new_pos.x = math.max(self.width, math.min(new_pos.x, map_width - self.width))
+	new_pos.y = math.max(self.height, math.min(new_pos.y, map_height - self.height))
+
 	self.pos = new_pos
 end
 
 local margin = 32
 local turnfactor = 50
 
-function Entity:stayInMap()
-	if self.pos.x < self.width then
-		self.velocity.x = self.velocity.x + 200
-	elseif self.pos.x > map_width - self.width then
-		self.velocity.x = self.velocity.x - 200
-	end
-
-	if self.pos.y < self.height then
-		self.velocity.y = self.velocity.y + 200
-	elseif self.pos.y > map_height - self.height then
-		self.velocity.y = self.velocity.y - 200
-	end
-end
 function Entity:steerMargins()
 	if self.pos.x < margin then
 		self.velocity.x = self.velocity.x + turnfactor
@@ -45,34 +35,11 @@ function Entity:steerMargins()
 	end
 end
 
-function Entity:collideEdges()
-	if self.pos.x < margin then
-		self.velocity.x = -self.velocity.x
-	elseif self.pos.x > map_width - self.width then
-		self.velocity.x = -self.velocity.x
-	end
-
-	if self.pos.y < margin then
-		self.velocity.y = -self.velocity.y
-	elseif self.pos.y > map_height - self.height then
-		self.velocity.y = -self.velocity.y
-	end
-end
-
-function Entity:wrapAroundMap()
-	if self.pos.x < self.width then
-		self.pos.x = map_width - self.width
-	elseif self.pos.x > map_width then
-		self.pos.x = self.width
-	end
-
-	if self.pos.y < self.height then
-		self.pos.y = map_height - self.height
-	elseif self.pos.y > map_height then
-		self.pos.y = self.height
-	end
-end
 function Entity:update(dt)
+	if self.pos.x == self.prev_pos.x and self.pos.y == self.prev_pos.y then
+		self.stuck_timer = self.stuck_timer + dt
+	end
+	self.prev_pos = vec(self.pos.x, self.pos.y)
 	if self.cell then
 		local alignment, cohesion, separation = self:calculateRules(self.cell.entities)
 		self.velocity.x = self.velocity.x + alignment.x + cohesion.x + separation.x
@@ -86,9 +53,14 @@ function Entity:update(dt)
 	end
 
 	self:steerMargins()
-	-- self:stayInMap()
-	--
 	self:move(dt)
+
+	if self.stuck_timer > 5 then
+		print("STUCK!")
+		self.pos = vec(love.math.random(50, 200), love.math.random(50, 200))
+		self.velocity = vec(love.math.random(-100, 100), love.math.random(-100, 100))
+		self.stuck_timer = 0
+	end
 end
 
 function Entity:calculateRules(boids)
@@ -154,7 +126,7 @@ end
 
 function Entity:draw()
 	lg.push()
-	lg.circle("fill", self.pos.x, self.pos.y, 3)
+	lg.circle("fill", self.pos.x, self.pos.y, 4)
 	local vx, vy = (self.velocity / 32):unpack()
 	lg.line(self.pos.x, self.pos.y, self.pos.x + vx, self.pos.y + vy)
 	lg.pop()

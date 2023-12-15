@@ -9,10 +9,10 @@ lg = love.graphics
 
 game_scale = 1
 ui_scale = 1
-map_width, map_height = 320 * 3, 320 * 3
+map_width, map_height = 320 * 6, 320 * 3
 show_grid = true
 
-local cell_size = 64
+local cell_size = 96
 
 grid = Grid(cell_size)
 
@@ -49,14 +49,6 @@ local selected_index = 1
 
 function love.update(dt)
 	update_start = love.timer.getTime()
-	for _, entity in ipairs(entities) do
-		entity:update(dt)
-		-- if not entity.cell then
-		-- 	entity.pos = vec(love.math.random(50, 200), love.math.random(50, 200))
-		-- 	entity.velocity = vec(100, 100)
-		-- 	grid:add(entity)
-		-- end
-	end
 
 	grid:update(dt)
 	update_end = love.timer.getTime()
